@@ -7,7 +7,7 @@ exports.createSauce = (req, res, next) => {
 //  delete sauceObject._userId;
   const sauce = new Sauce({
       ...sauceObject,
-      userId: req.auth.userId, // userId est le propriétaire de la sauce
+      userId: req.auth.userId,  // A retirer peut être
       imageUrl: `${req.protocol}://${req.get('host')}/images/${req.file.filename}`
   });
 
@@ -20,57 +20,58 @@ exports.likedislikeSauce = (req, res, next) => {
   const sauceId = req.params.id;
   const userId = req.body.userId;
   const like = req.body.like;
-  // l'utilisateur aime la sauce : (like === 1)
+  // 1. user likes a sauce for the first time (like === 1)
+  // pushing the userId to usersLiked array; incrementing likes
   if (like === 1) {
     Sauce.updateOne(
       { _id: sauceId },
       {
-        $inc: { likes: 1 }, // on incrémente le nombre de like
-        $addToSet: { usersLiked: userId }, // on ajoute l'utilisateur dans le tableau
+        $inc: { likes: like },
+        $push: { usersLiked: userId },
       }
     )
-      .then(() => res.status(200).json({ message: "Sauce aimée" }))
+      .then(() => res.status(200).json({ message: "Sauce appréciée" }))
       .catch((error) => res.status(500).json({ error }));
   }
 
-  // l utilisateur déteste la sauce (like === -1)
+  // 2. user DISlikes a sauce for the first time (like === -1)
+  // pushing the userId to usersLiked array; one less like.
   else if (like === -1) {
     Sauce.updateOne(
       { _id: sauceId },
       {
-        $inc: { dislikes: -1 }, // on décrémente le nombre de like
-        $addToSet: { usersDisliked: userId }, // on ajoute l'utilisateur dans le tableau
+        $inc: { dislikes: -1 * like },
+        $push: { usersDisliked: userId },
       }
     )
-      .then(() => res.status(200).json({ message: "Sauce détestée" }))
+      .then(() => res.status(200).json({ message: "Sauce dépréciée" }))
       .catch((error) => res.status(500).json({ error }));
   }
-  // l utilisateur retire son like ou son dislike (like === 0)
+  // 3. User changes his mind
+  // 3.1. user is taking back his like :
   else {
     Sauce.findOne({ _id: sauceId })
       .then((sauce) => {
-        if (sauce.usersLiked.includes(userId)) { // l utilisateur retire son like
+        if (sauce.usersLiked.includes(userId)) {
           Sauce.updateOne(
             { _id: sauceId },
-            { 
-              $inc: { likes: -1 },  // on décrémente le nombre de like
-              $pull: { usersLiked: userId }, // on retire l'utilisateur dans le tableau
-            }, 
+            { $pull: { usersLiked: userId }, $inc: { likes: -1 } }
           )
             .then(() => {
-              res.status(200).json({ message: "Sauce détestée" });
+              res.status(200).json({ message: "Sauce dépréciée" });
             })
             .catch((error) => res.status(500).json({ error }));
-        } else if (sauce.usersDisliked.includes(userId)) { // l utilisateur retire son dislike
+          // 3.2 user is changing his mind on his dislike
+        } else if (sauce.usersDisliked.includes(userId)) {
           Sauce.updateOne(
             { _id: sauceId },
             {
-              $inc: { dislikes: -1 }, // on décrémente le nombre de dislike
-              $pull: { usersDisliked: userId }, // on retire l'utilisateur dans le tableau
+              $pull: { usersDisliked: userId },
+              $inc: { dislikes: -1 },
             }
           )
             .then(() => {
-              res.status(200).json({ message: "Sauce aimée" });
+              res.status(200).json({ message: "Sauce appréciée" });
             })
             .catch((error) => res.status(500).json({ error }));
         }
