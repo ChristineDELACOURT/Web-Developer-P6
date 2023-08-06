@@ -1,6 +1,8 @@
-const http = require('http');
+const http = require('http'); // import du package HTTP natif de Node 
 const app = require('./app');
+const dotenv = require('dotenv').config(); // pour utiliser les variables d environnement
 
+// la fonction normalizePort renvoie un port valide
 const normalizePort = val => {
   const port = parseInt(val, 10);
 
@@ -15,6 +17,7 @@ const normalizePort = val => {
 const port = normalizePort(process.env.PORT || '3000');
 app.set('port', port);
 
+// la fonction errorHandler  recherche les différentes erreurs
 const errorHandler = error => {
   if (error.syscall !== 'listen') {
     throw error;
@@ -35,7 +38,7 @@ const errorHandler = error => {
   }
 };
 
-const server = http.createServer(app);
+const server = http.createServer(app); // Appel de la méthode createServer du package http
 
 server.on('error', errorHandler);
 server.on('listening', () => {
@@ -44,4 +47,5 @@ server.on('listening', () => {
   console.log('Listening on ' + bind);
 });
 
+// un écouteur d'évènements est également enregistré
 server.listen(port);

@@ -3,6 +3,7 @@ const fs = require('fs');
 
 exports.createSauce = (req, res, next) => {
   const sauceObject = JSON.parse(req.body.sauce);
+// on supprime en amont le faux_id envoyé par le front-end
   delete sauceObject._id;
 //  delete sauceObject._userId;
   const sauce = new Sauce({
@@ -11,7 +12,7 @@ exports.createSauce = (req, res, next) => {
       imageUrl: `${req.protocol}://${req.get('host')}/images/${req.file.filename}`
   });
 
-  sauce.save()
+  sauce.save() // la méthode save() renvoie une Promise
   .then(() => { res.status(201).json({message: 'Objet enregistré !'})})
   .catch(error => { res.status(400).json( { error })})
 };
@@ -38,7 +39,7 @@ exports.likedislikeSauce = (req, res, next) => {
     Sauce.updateOne(
       { _id: sauceId },
       {
-        $inc: { dislikes: -1 }, // on décrémente le nombre de like
+        $inc: { dislikes: 1 }, // on incrémente le nombre de dislike
         $addToSet: { usersDisliked: userId }, // on ajoute l'utilisateur dans le tableau
       }
     )
@@ -46,7 +47,7 @@ exports.likedislikeSauce = (req, res, next) => {
       .catch((error) => res.status(500).json({ error }));
   }
   // l utilisateur retire son like ou son dislike (like === 0)
-  else {
+  else if (like === 0) {
     Sauce.findOne({ _id: sauceId })
       .then((sauce) => {
         if (sauce.usersLiked.includes(userId)) { // l utilisateur retire son like
@@ -108,6 +109,7 @@ exports.modifySauce = (req, res, next) => {
             // res.status(401).json({ message : 'Not authorized'});
               res.status(403).json({ message : ' unauthorized request'});
           } else {
+            // la méthode updateOne() dans notre modèle Sauce permet de mettre à jour la Sauce
               Sauce.updateOne({ _id: req.params.id}, { ...sauceObject, _id: req.params.id})
               .then(() => res.status(200).json({message : 'Objet modifié!'}))
               .catch(error => res.status(401).json({ error }));
@@ -118,14 +120,16 @@ exports.modifySauce = (req, res, next) => {
       });
 };
 
+
 exports.deleteSauce = (req, res, next) => {
-  Sauce.findOne({ _id: req.params.id})
+  Sauce.findOne({ _id: req.params.id}) // la méthode findOne() dans notre modèle Sauce trouve la Sauce unique ayant le même _id
       .then(sauce => {
           if (sauce.userId != req.auth.userId) {
               res.status(401).json({message: 'Not authorized'});
           } else {
               const filename = sauce.imageUrl.split('/images/')[1];
               fs.unlink(`images/${filename}`, () => {
+                // La méthode deleteOne() de notre modèle fonctionne comme findOne() et updateOne()
                   sauce.deleteOne({_id: req.params.id})
                       .then(() => { res.status(200).json({message: 'Objet supprimé !'})})
                       .catch(error => res.status(401).json({ error }));
@@ -138,7 +142,7 @@ exports.deleteSauce = (req, res, next) => {
 };
 
 exports.getAllSauce = (req, res, next) => {
-  Sauce.find().then(
+  Sauce.find().then( // la ùethode find() dans notre modèle Mongoose renvoit un tableau contenant toutes les sauces
     (sauce) => {
       res.status(200).json(sauce);
     }

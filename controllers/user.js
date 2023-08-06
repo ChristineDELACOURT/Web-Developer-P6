@@ -1,10 +1,11 @@
 var User = require('../models/User');
-const bcrypt = require('bcrypt');
-const jwt = require('jsonwebtoken');
+const bcrypt = require('bcrypt'); // cryptage du mot de passe
+const jwt = require('jsonwebtoken'); // creation des jetons
 var validator = require('validatorjs'); // pour valider l'email
+const dotenv = require('dotenv').config(); // pour utiliser les variables d environnement
 
 exports.signup = (req, res, next) => {
-  const validiteEmail = new validator( // il existe deja une validation de l email
+  const validiteEmail = new validator(
   {email: req.body.email}, 
   {email: 'required|email'} ,
   'email invalide');  
@@ -41,9 +42,9 @@ exports.login = (req, res, next) => {
                   }
                   res.status(200).json({
                       userId: user._id,
-                      token: jwt.sign(
+                      token: jwt.sign( // encodage d un token
                         { userId: user._id },
-                        'RANDOM_TOKEN_SECRET',
+                        process.env.JWT_KEY_TOKEN,
                         { expiresIn: '24h' } // le jeton est valable 24h
                     )
                   });
