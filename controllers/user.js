@@ -1,8 +1,20 @@
 var User = require('../models/User');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
+var validator = require('validatorjs'); // pour valider l'email
 
 exports.signup = (req, res, next) => {
+  const validiteEmail = new validator( // il existe deja une validation de l email
+  {email: req.body.email}, 
+  {email: 'required|email'} ,
+  'email invalide');  
+  if (validiteEmail.fails()) {
+    return res.status(401).json({ message: 'email invalide' });      
+  }
+  const passwordRegExp = /^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[#?!@$%^&*-]).{8,}$/;
+  if (passwordRegExp.test(req.body.password) == false) {
+    return res.status(401).json({ message: 'password invalide' });
+  }
   bcrypt.hash(req.body.password, 10)
     .then(hash => {
       const user = new User({
@@ -32,7 +44,7 @@ exports.login = (req, res, next) => {
                       token: jwt.sign(
                         { userId: user._id },
                         'RANDOM_TOKEN_SECRET',
-                        { expiresIn: '24h' }
+                        { expiresIn: '24h' } // le jeton est valable 24h
                     )
                   });
               })
