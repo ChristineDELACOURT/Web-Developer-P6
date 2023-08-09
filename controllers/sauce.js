@@ -23,28 +23,47 @@ exports.likedislikeSauce = (req, res, next) => {
   const like = req.body.like;
   // l'utilisateur aime la sauce : (like === 1)
   if (like === 1) {
-    Sauce.updateOne(
-      { _id: sauceId },
-      {
-        $inc: { likes: 1 }, // on incrémente le nombre de like
-        $addToSet: { usersLiked: userId }, // on ajoute l'utilisateur dans le tableau
-      }
-    )
-      .then(() => res.status(200).json({ message: "Sauce aimée" }))
-      .catch((error) => res.status(500).json({ error }));
+    Sauce.findOne({ _id: sauceId })
+    .then((sauce) => {
+      // l utilisateur n a pas encore mis de like
+      if (!sauce.usersLiked.includes(userId)) {
+        Sauce.updateOne(
+          { _id: sauceId },
+          { 
+            $inc: { likes: 1 },  // on incrémente le nombre de like
+            $addToSet: { usersLiked: userId }, // on ajoute l'utilisateur dans le tableau
+          }, 
+        )
+          .then(() => {
+            res.status(200).json({ message: "Sauce aimée" });
+          })
+          .catch((error) => res.status(401).json({ message: "Sauce déjà aimée" }));
+        }
+      })
+          .catch((error) => res.status(500).json({ error }));
   }
+  
 
   // l utilisateur déteste la sauce (like === -1)
   else if (like === -1) {
-    Sauce.updateOne(
-      { _id: sauceId },
-      {
-        $inc: { dislikes: 1 }, // on incrémente le nombre de dislike
-        $addToSet: { usersDisliked: userId }, // on ajoute l'utilisateur dans le tableau
-      }
-    )
-      .then(() => res.status(200).json({ message: "Sauce détestée" }))
-      .catch((error) => res.status(500).json({ error }));
+    Sauce.findOne({ _id: sauceId })
+    .then((sauce) => {
+      // l utilisateur n a pas encore mis de dislike
+      if (!sauce.usersDisliked.includes(userId)) {
+        Sauce.updateOne(
+          { _id: sauceId },
+          { 
+            $inc: { dislikes: 1 },  // on incrémente le nombre de dislike
+            $addToSet: { usersDisliked: userId }, // on ajoute l'utilisateur dans le tableau
+          }, 
+        )
+          .then(() => {
+            res.status(200).json({ message: "Sauce détestée" });
+          })
+          .catch((error) => res.status(401).json({ message: "Sauce déjà détestée" }));
+        }
+      })
+          .catch((error) => res.status(500).json({ error }));
   }
   // l utilisateur retire son like ou son dislike (like === 0)
   else if (like === 0) {

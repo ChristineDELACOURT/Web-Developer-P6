@@ -5,6 +5,11 @@ var validator = require('validatorjs'); // pour valider l'email
 const dotenv = require('dotenv').config(); // pour utiliser les variables d environnement
 
 exports.signup = (req, res, next) => {
+  User.findOne({ email: req.body.email })
+      .then(user => {
+          if (user) {
+              return res.status(401).json({ message: 'Utilisateur existant'});
+          }
   const validiteEmail = new validator(
   {email: req.body.email}, 
   {email: 'required|email'} ,
@@ -14,7 +19,7 @@ exports.signup = (req, res, next) => {
   }
   const passwordRegExp = /^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[#?!@$%^&*-]).{8,}$/;
   if (passwordRegExp.test(req.body.password) == false) {
-    return res.status(401).json({ message: 'password invalide' });
+    return res.status(401).json({ message: 'mot de passe invalide' });
   }
   bcrypt.hash(req.body.password, 10)
     .then(hash => {
@@ -26,6 +31,8 @@ exports.signup = (req, res, next) => {
         .then(() => res.status(201).json({ message: 'Utilisateur créé !' }))
         .catch(error => res.status(400).json({ error }));
     })
+    .catch(error => res.status(500).json({ error }));
+  })
     .catch(error => res.status(500).json({ error }));
 };
 

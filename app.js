@@ -32,7 +32,7 @@ app.use((req, res, next) => {
 // et met à disposition leur  body  directement sur l'objet req
 app.use(express.json());  // Le bodyParser est dans express
 
-app.use('/images', express.static(path.join(__dirname, 'images')));
+app.use('/images', express.static(path.join(__dirname, 'images'))); //rend le dossier images statique
 app.use('/api/sauces', sauceRoutes);
 app.use('/api/auth', userRoutes);
 
