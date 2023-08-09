@@ -2,6 +2,7 @@ var User = require('../models/User');
 const bcrypt = require('bcrypt'); // cryptage du mot de passe
 const jwt = require('jsonwebtoken'); // creation des jetons
 var validator = require('validatorjs'); // pour valider l'email
+const cryptojs = require('crypto-js'); // pour chiffrer le mail
 const dotenv = require('dotenv').config(); // pour utiliser les variables d environnement
 
 exports.signup = (req, res, next) => {
@@ -17,6 +18,8 @@ exports.signup = (req, res, next) => {
   if (validiteEmail.fails()) {
     return res.status(401).json({ message: 'email invalide' });      
   }
+  //chiffrement de l email 
+  const emailCrypte = cryptojs.HmacSHA256(req.body.email, `${process.env.CRYPTOJS}`).toString();
   const passwordRegExp = /^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[#?!@$%^&*-]).{8,}$/;
   if (passwordRegExp.test(req.body.password) == false) {
     return res.status(401).json({ message: 'mot de passe invalide' });
@@ -24,7 +27,7 @@ exports.signup = (req, res, next) => {
   bcrypt.hash(req.body.password, 10)
     .then(hash => {
       const user = new User({
-        email: req.body.email,
+        email: emailCrypte,
         password: hash
       });
       user.save()
@@ -37,7 +40,9 @@ exports.signup = (req, res, next) => {
 };
 
 exports.login = (req, res, next) => {
-  User.findOne({ email: req.body.email })
+  //chiffrement de l email pour la comparaison
+  const emailCrypte = cryptojs.HmacSHA256(req.body.email, `${process.env.CRYPTOJS}`).toString();
+  User.findOne({ email: emailCrypte })
       .then(user => {
           if (!user) {
               return res.status(401).json({ message: 'Paire login/mot de passe incorrecte'});

@@ -13,6 +13,9 @@ mongoose.connect(process.env.DB_CHAINE_CONNECTION,
   .then(() => console.log('Connexion à MongoDB réussie !'))
   .catch(() => console.log('Connexion à MongoDB échouée !'));
 
+// Récupération des erreurs de la base de données
+mongoose.connection.on('error',console.error.bind(console, 'Erreur de connexion: '));
+
 const app = express();
 
 // On autorise les échanges entre 2 serveurs différents en évitant les erreurs de CORS
